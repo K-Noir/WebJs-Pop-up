@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统升级保护 - 完整演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 i {
+            font-size: 1.5em;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .status-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .status-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .status-value.upgrading {
+            color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-value.ready {
+            color: #27ae60;
+        }
+
+        .upgrade-progress {
+            margin-top: 25px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: linear-gradient(135deg, #219653, #1e8449);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #7f8c8d, #6c7b7d);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(149, 165, 166, 0.4);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .test-actions {
+            margin-top: 30px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            background: #f8f9fa;
+            border: 2px solid #dfe6e9;
+            padding: 15px;
+            border-radius: 10px;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        .browser-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #9b59b6;
+        }
+
+        .browser-info h3 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+        }
+
+        .warning-alert {
+            background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border: 2px solid #e17055;
+        }
+
+        .warning-alert h3 {
+            color: #d63031;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            margin-top: 40px;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .instructions h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 15px;
+            padding-left: 10px;
+        }
+
+        /* 升级提示横幅 */
+        .upgrade-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 18px 30px;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .banner-icon {
+            font-size: 2rem;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .banner-text h3 {
+            margin-bottom: 5px;
+            font-size: 1.3rem;
+        }
+
+        .banner-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .banner-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .banner-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 预升级确认模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 20000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .modal-content {
+            margin-bottom: 30px;
+        }
+
+        .modal-content ul {
+            margin: 15px 0 15px 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: #3498db;
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: #2980b9;
+        }
+
+        .modal-btn.cancel {
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #dfe6e9;
+        }
+
+        .completion-message {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(39, 174, 96, 0.4);
+            z-index: 10000;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <!-- 升级横幅 -->
+    <div class="upgrade-banner" id="upgradeBanner">
+        <div class="banner-content">
+            <div class="banner-icon">⚙️</div>
+            <div class="banner-text">
+                <h3>🚀 系统正在升级中...</h3>
+                <p>请不要关闭或刷新页面，否则可能导致升级失败和数据丢失</p>
+                <p>升级进度：<span id="bannerProgress">0%</span></p>
+            </div>
+        </div>
+        <div class="banner-buttons">
+            <button class="banner-btn" onclick="pauseUpgrade()">暂停升级</button>
+            <button class="banner-btn" onclick="showForceCloseConfirm()">强制结束</button>
+        </div>
+    </div>
+
+    <!-- 预升级确认模态框 -->
+    <div class="modal-overlay" id="preUpgradeModal">
+        <div class="modal">
+            <h2>⚠️ 确认开始系统升级</h2>
+            <div class="modal-content">
+                <p><strong>升级预计需要 2-3 分钟完成</strong></p>
+                <ul>
+                    <li>✅ 您的当前数据已自动保存</li>
+                    <li>⚠️ <strong>升级期间请不要关闭浏览器窗口</strong></li>
+                    <li>🔄 升级过程不可中断，否则需要重新开始</li>
+                    <li>📊 升级进度会实时显示</li>
+                    <li>🔧 升级后可能需要重新登录</li>
+                </ul>
+                <p style="margin-top: 15px; color: #e74c3c;">
+                    <strong>注意：</strong>如果您在升级期间关闭页面，浏览器会显示提示：
+                    <em>"系统可能不会保存您所做的更改。"</em>（这是浏览器默认提示，无法更改）
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="hidePreUpgradeModal()">取消</button>
+                <button class="modal-btn confirm" onclick="confirmUpgrade()">确认开始升级</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 强制关闭确认模态框 -->
+    <div class="modal-overlay" id="forceCloseModal" style="display: none;">
+        <div class="modal">
+            <h2>⚠️ 警告：强制结束升级</h2>
+            <div class="modal-content">
+                <p>您确定要强制结束系统升级吗？</p>
+                <ul>
+                    <li>❌ 已完成的升级进度将丢失</li>
+                    <li>⚠️ 可能导致系统状态不一致</li>
+                    <li>🔄 下次需要从头开始升级</li>
+                    <li>📊 未保存的数据可能会丢失</li>
+                </ul>
+                <p style="margin-top: 15px; color: #e74c3c; font-weight: bold;">
+                    强烈建议等待升级完成！
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="hideForceCloseModal()">取消</button>
+                <button class="modal-btn confirm" onclick="forceCompleteUpgrade()" style="background: #e74c3c;">强制结束</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="header">
+        <h1>🔧 系统升级保护演示</h1>
+        <p>演示如何在系统升级期间保护用户数据并防止意外关闭</p>
+    </div>
+
+    <div class="dashboard">
+        <!-- 系统状态卡片 -->
+        <div class="card">
+            <h2><i>📊</i> 系统状态</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">升级状态</span>
+                    <span id="upgradeStatus" class="status-value ready">准备就绪</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">保护状态</span>
+                    <span id="protectionStatus" class="status-value ready">未激活</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">升级进度</span>
+                    <span id="progressPercent" class="status-value">0%</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">浏览器兼容</span>
+                    <span id="browserCompatible" class="status-value ready">检测中...</span>
+                </div>
+            </div>
+
+            <div class="upgrade-progress">
+                <div class="progress-info">
+                    <span>升级进度</span>
+                    <span id="progressText">等待开始</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="showPreUpgradeModal()" id="startBtn">
+                    <span>🚀</span> 开始升级
+                </button>
+                <button class="btn btn-success" onclick="completeUpgrade()" id="completeBtn" disabled>
+                    <span>✅</span> 完成升级
+                </button>
+                <button class="btn btn-danger" onclick="cancelUpgrade()" id="cancelBtn" disabled>
+                    <span>❌</span> 取消升级
+                </button>
+                <button class="btn btn-secondary" onclick="resetDemo()" id="resetBtn">
+                    <span>🔄</span> 重置演示
+                </button>
+            </div>
+        </div>
+
+        <!-- 测试操作卡片 -->
+        <div class="card">
+            <h2><i>🧪</i> 测试保护效果</h2>
+            <p>在升级期间尝试以下操作，观察浏览器保护机制：</p>
+
+            <div class="test-actions">
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="simulateCloseTab()">
+                        <span>❌</span> 模拟关闭标签页
+                    </button>
+                    <button class="action-btn" onclick="simulateRefresh()">
+                        <span>🔄</span> 模拟刷新页面
+                    </button>
+                    <button class="action-btn" onclick="simulateNavigation()">
+                        <span>📍</span> 模拟页面跳转
+                    </button>
+                    <button class="action-btn" onclick="simulateBackButton()">
+                        <span>🔙</span> 模拟后退按钮
+                    </button>
+                </div>
+            </div>
+
+            <div class="browser-info">
+                <h3>📌 浏览器提示说明</h3>
+                <p id="browserPromptText">浏览器检测中...</p>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">
+                    注意：现代浏览器使用统一提示文本，无法自定义为"系统正在升级"
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 浏览器限制警告 -->
+    <div class="warning-alert">
+        <h3>⚠️ 重要限制说明</h3>
+        <p>由于浏览器安全策略限制：</p>
+        <ul>
+            <li><strong>无法自定义关闭提示文本</strong> - 所有网站都显示统一的"系统可能不会保存您所做的更改。"</li>
+            <li><strong>无法完全阻止关闭</strong> - 用户始终可以选择强制关闭</li>
+            <li><strong>提示文本由浏览器决定</strong> - Chrome、Firefox、Safari 各有不同但都无法修改</li>
+        </ul>
+        <p style="margin-top: 10px;">本演示通过页面内明显提示 + 自动保存机制提供最佳用户体验。</p>
+    </div>
+
+    <!-- 使用说明 -->
+    <div class="instructions">
+        <h2>📖 使用说明</h2>
+        <ol>
+            <li><strong>点击"开始升级"按钮</strong> - 系统会先显示确认对话框，说明升级注意事项</li>
+            <li><strong>观察保护机制激活</strong> - 升级开始后，顶部会出现明显横幅提示，beforeunload 事件监听激活</li>
+            <li><strong>测试保护效果</strong> - 在升级期间，使用右侧的测试按钮模拟各种离开页面的操作</li>
+            <li><strong>查看浏览器提示</strong> - 尝试关闭时，浏览器会显示默认的离开确认对话框</li>
+            <li><strong>完成或取消升级</strong> - 升级完成后保护自动解除，或手动取消/完成升级</li>
+            <li><strong>重置演示</strong> - 任何时候都可以重置演示回到初始状态</li>
+        </ol>
+        <p style="margin-top: 20px; color: #3498db; font-weight: bold;">
+            💡 最佳实践：重要操作期间通过明显的页面内提示告知用户，而不是依赖浏览器的通用提示。
+        </p>
+    </div>
+
+    <!-- 完成消息 -->
+    <div class="completion-message" id="completionMessage">
+        <h3>✅ 升级完成！</h3>
+        <p>系统升级已成功完成，现在可以安全关闭页面。</p>
+    </div>
+
+    <div class="footer">
+        <p>系统升级保护演示 | 展示 beforeunload 事件的实际应用</p>
+        <p>注意：遵循浏览器安全规范，提供最佳用户体验</p>
+    </div>
+</div>
+
+<script>
+    // ====================
+    // 状态管理
+    // ====================
+    let isUpgrading = false;
+    let upgradeProgress = 0;
+    let upgradeInterval = null;
+    let beforeUnloadHandler = null;
+    let isProtectionActive = false;
+    let autoSaveCompleted = false;
+
+    // ====================
+    // 初始化
+    // ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        initBeforeUnloadListener();
+        checkBrowserCompatibility();
+        updateUI();
+
+        // 模拟一些初始数据
+        simulateUserData();
+    });
+
+    // ====================
+    // Beforeunload 事件处理
+    // ====================
+    function initBeforeUnloadListener() {
+        // 移除旧的监听器（如果存在）
+        if (beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+        }
+
+        // 创建新的处理函数
+        beforeUnloadHandler = function(event) {
+            if (shouldPreventUnload()) {
+                // 现代浏览器的标准写法
+                event.preventDefault();
+                event.returnValue = ''; // Chrome 要求非空
+
+                // 记录调试信息
+                console.log('[beforeunload] 页面即将关闭，显示浏览器确认对话框');
+                console.log('[beforeunload] 提示文本由浏览器决定："系统可能不会保存您所做的更改。"');
+
+                // 尝试自动保存（如果尚未保存）
+                if (!autoSaveCompleted) {
+                    autoSaveUserData();
+                }
+            }
+        };
+
+        // 添加事件监听
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+        isProtectionActive = true;
+        updateUI();
+    }
+
+    function shouldPreventUnload() {
+        return isUpgrading && upgradeProgress < 100;
+    }
+
+    // ====================
+    // 升级流程控制
+    // ====================
+    function showPreUpgradeModal() {
+        document.getElementById('preUpgradeModal').style.display = 'flex';
+    }
+
+    function hidePreUpgradeModal() {
+        document.getElementById('preUpgradeModal').style.display = 'none';
+    }
+
+    function confirmUpgrade() {
+        hidePreUpgradeModal();
+        startUpgradeProcess();
+    }
+
+    async function startUpgradeProcess() {
+        console.log('[系统] 开始升级流程...');
+
+        // 1. 自动保存用户数据
+        await autoSaveUserData();
+
+        // 2. 开始升级
+        isUpgrading = true;
+        upgradeProgress = 0;
+
+        // 3. 显示升级横幅
+        showUpgradeBanner();
+
+        // 4. 更新UI
+        updateUI();
+
+        // 5. 开始模拟升级进度
+        startUpgradeSimulation();
+
+        console.log('[系统] 升级开始，保护机制已激活');
+        showToast('保护机制已激活，尝试关闭页面会收到浏览器提示');
+    }
+
+    function startUpgradeSimulation() {
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+        }
+
+        upgradeInterval = setInterval(function() {
+            if (upgradeProgress < 100) {
+                // 模拟不规则的进度增加
+                let increment;
+                if (upgradeProgress < 30) {
+                    increment = Math.random() * 5 + 3; // 初期较快
+                } else if (upgradeProgress < 70) {
+                    increment = Math.random() * 3 + 2; // 中期中等
+                } else {
+                    increment = Math.random() * 2 + 1; // 后期较慢
+                }
+
+                upgradeProgress = Math.min(upgradeProgress + increment, 100);
+
+                // 更新进度显示
+                updateProgress();
+
+                // 如果升级完成，自动结束
+                if (upgradeProgress >= 100) {
+                    completeUpgrade();
+                }
+            }
+        }, 500);
+    }
+
+    function pauseUpgrade() {
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+            upgradeInterval = null;
+            showToast('升级已暂停，点击"完成升级"继续');
+        }
+    }
+
+    function completeUpgrade() {
+        if (!isUpgrading) return;
+
+        console.log('[系统] 升级完成');
+
+        // 停止升级计时器
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+            upgradeInterval = null;
+        }
+
+        // 更新状态
+        isUpgrading = false;
+        upgradeProgress = 100;
+
+        // 更新UI
+        updateProgress();
+        updateUI();
+
+        // 隐藏横幅
+        hideUpgradeBanner();
+
+        // 显示完成消息
+        showCompletionMessage();
+
+        // 显示提示
+        showToast('✅ 升级完成！保护机制已解除');
+
+        console.log('[系统] 升级完成，保护机制已解除');
+    }
+
+    function cancelUpgrade() {
+        if (!confirm('确定要取消升级吗？已完成的进度将丢失。')) {
+            return;
+        }
+
+        console.log('[系统] 升级取消');
+
+        // 停止升级计时器
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+            upgradeInterval = null;
+        }
+
+        // 重置状态
+        isUpgrading = false;
+        upgradeProgress = 0;
+
+        // 更新UI
+        updateProgress();
+        updateUI();
+
+        // 隐藏横幅
+        hideUpgradeBanner();
+
+        showToast('升级已取消');
+    }
+
+    function resetDemo() {
+        if (isUpgrading && !confirm('升级进行中，确定要重置演示吗？')) {
+            return;
+        }
+
+        // 停止所有计时器
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+            upgradeInterval = null;
+        }
+
+        // 重置所有状态
+        isUpgrading = false;
+        upgradeProgress = 0;
+        autoSaveCompleted = false;
+
+        // 更新UI
+        updateProgress();
+        updateUI();
+
+        // 隐藏所有模态框和横幅
+        hideUpgradeBanner();
+        hidePreUpgradeModal();
+        document.getElementById('forceCloseModal').style.display = 'none';
+        document.getElementById('completionMessage').style.display = 'none';
+
+        // 重新初始化
+        initBeforeUnloadListener();
+
+        showToast('演示已重置');
+    }
+
+    // ====================
+    // 强制关闭相关
+    // ====================
+    function showForceCloseConfirm() {
+        document.getElementById('forceCloseModal').style.display = 'flex';
+    }
+
+    function hideForceCloseModal() {
+        document.getElementById('forceCloseModal').style.display = 'none';
+    }
+
+    function forceCompleteUpgrade() {
+        hideForceCloseModal();
+
+        // 模拟紧急保存
+        emergencySave();
+
+        // 完成升级（强制）
+        if (upgradeInterval) {
+            clearInterval(upgradeInterval);
+            upgradeInterval = null;
+        }
+
+        isUpgrading = false;
+        upgradeProgress = 0;
+
+        updateProgress();
+        updateUI();
+        hideUpgradeBanner();
+
+        showToast('⚠️ 升级已强制结束，建议检查系统状态');
+    }
+
+    // ====================
+    // 数据保存模拟
+    // ====================
+    async function autoSaveUserData() {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                console.log('[系统] 用户数据已自动保存');
+                autoSaveCompleted = true;
+                showToast('💾 数据已自动保存');
+                resolve();
+            }, 500);
+        });
+    }
+
+    function emergencySave() {
+        console.log('[系统] 执行紧急数据保存...');
+        showToast('🚨 正在紧急保存数据...');
+
+        // 模拟紧急保存
+        setTimeout(() => {
+            showToast('✅ 紧急保存完成');
+        }, 1000);
+    }
+
+    function simulateUserData() {
+        // 模拟用户有一些未保存的数据
+        setTimeout(() => {
+            showToast('模拟：检测到未保存的表单数据');
+        }, 2000);
+    }
+
+    // ====================
+    // UI 更新函数
+    // ====================
+    function updateUI() {
+        // 更新状态文本
+        const statusElement = document.getElementById('upgradeStatus');
+        const protectionElement = document.getElementById('protectionStatus');
+
+        if (isUpgrading) {
+            statusElement.textContent = '升级中';
+            statusElement.className = 'status-value upgrading';
+            protectionElement.textContent = '已激活';
+            protectionElement.className = 'status-value upgrading';
+
+            // 按钮状态
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('completeBtn').disabled = false;
+            document.getElementById('cancelBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = false;
+        } else {
+            statusElement.textContent = '准备就绪';
+            statusElement.className = 'status-value ready';
+            protectionElement.textContent = isProtectionActive ? '就绪' : '未激活';
+            protectionElement.className = isProtectionActive ? 'status-value ready' : 'status-value';
+
+            // 按钮状态
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('completeBtn').disabled = true;
+            document.getElementById('cancelBtn').disabled = true;
+            document.getElementById('resetBtn').disabled = false;
+        }
+    }
+
+    function updateProgress() {
+        const progressPercent = Math.round(upgradeProgress);
+
+        // 更新进度条
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = upgradeProgress + '%';
+
+        // 更新百分比文本
+        document.getElementById('progressPercent').textContent = progressPercent + '%';
+        document.getElementById('bannerProgress').textContent = progressPercent + '%';
+
+        // 更新进度文本
+        const progressText = document.getElementById('progressText');
+        if (upgradeProgress >= 100) {
+            progressText.textContent = '升级完成';
+            progressBar.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+        } else if (upgradeProgress >= 70) {
+            progressText.textContent = '最后阶段...';
+            progressBar.style.background = 'linear-gradient(90deg, #f39c12, #f1c40f)';
+        } else if (upgradeProgress >= 30) {
+            progressText.textContent = '进行中...';
+            progressBar.style.background = 'linear-gradient(90deg, #3498db, #2980b9)';
+        } else {
+            progressText.textContent = '初始化...';
+            progressBar.style.background = 'linear-gradient(90deg, #3498db, #2ecc71)';
+        }
+    }
+
+    function showUpgradeBanner() {
+        const banner = document.getElementById('upgradeBanner');
+        banner.style.display = 'flex';
+        updateProgress();
+    }
+
+    function hideUpgradeBanner() {
+        document.getElementById('upgradeBanner').style.display = 'none';
+    }
+
+    function showCompletionMessage() {
+        const message = document.getElementById('completionMessage');
+        message.style.display = 'block';
+
+        // 5秒后自动隐藏
+        setTimeout(() => {
+            message.style.display = 'none';
+        }, 5000);
+    }
+
+    // ====================
+    // 测试函数
+    // ====================
+    function simulateCloseTab() {
+        console.log('[测试] 模拟关闭标签页');
+        showToast('尝试关闭标签页会触发浏览器提示');
+
+        // 创建一个模拟的 beforeunload 事件
+        const event = new Event('beforeunload', { cancelable: true });
+        event.preventDefault = function() {
+            console.log('[测试] 事件已被阻止，将显示浏览器提示');
+        };
+        event.returnValue = '';
+
+        // 触发处理函数
+        if (beforeUnloadHandler) {
+            beforeUnloadHandler(event);
+        }
+
+        if (isUpgrading) {
+            alert('测试：如果您现在关闭标签页，浏览器会显示提示：\n\n"系统可能不会保存您所做的更改。"\n\n（这是浏览器默认提示，无法更改）');
+        } else {
+            alert('测试：当前没有进行升级，关闭标签页不会收到提示。');
+        }
+    }
+
+    function simulateRefresh() {
+        console.log('[测试] 模拟刷新页面');
+        showToast('尝试刷新页面会触发浏览器提示');
+
+        if (isUpgrading) {
+            alert('测试：如果您现在刷新页面（F5），浏览器会显示提示：\n\n"系统可能不会保存您所做的更改。"');
+        } else {
+            alert('测试：当前没有进行升级，刷新页面不会收到提示。');
+        }
+    }
+
+    function simulateNavigation() {
+        console.log('[测试] 模拟页面跳转');
+        showToast('尝试跳转页面会触发浏览器提示');
+
+        if (isUpgrading) {
+            alert('测试：如果您现在跳转到其他页面，浏览器会显示提示：\n\n"系统可能不会保存您所做的更改。"');
+
+            // 实际尝试跳转（会被 beforeunload 阻止）
+            setTimeout(() => {
+                window.location.href = 'about:blank';
+            }, 100);
+        } else {
+            alert('测试：当前没有进行升级，可以正常跳转页面。');
+        }
+    }
+
+    function simulateBackButton() {
+        console.log('[测试] 模拟后退按钮');
+        showToast('尝试使用后退按钮会触发浏览器提示');
+
+        if (isUpgrading) {
+            alert('测试：如果您点击浏览器的后退按钮，浏览器会显示提示：\n\n"系统可能不会保存您所做的更改。"');
+        } else {
+            alert('测试：当前没有进行升级，可以使用后退按钮。');
+        }
+    }
+
+    // ====================
+    // 浏览器兼容性检测
+    // ====================
+    function checkBrowserCompatibility() {
+        const compatibleElement = document.getElementById('browserCompatible');
+        const promptElement = document.getElementById('browserPromptText');
+
+        // 检测浏览器类型
+        const userAgent = navigator.userAgent;
+        let browserName = '未知浏览器';
+        let browserPrompt = '';
+
+        if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
+            browserName = 'Chrome';
+            browserPrompt = '提示文本："要离开吗？系统可能不会保存您所做的更改。"';
+        } else if (userAgent.includes('Firefox')) {
+            browserName = 'Firefox';
+            browserPrompt = '提示文本："此页面想让你确认是否离开 - 你输入的数据可能不会被保存"';
+        } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+            browserName = 'Safari';
+            browserPrompt = '提示文本："Are you sure you want to leave this page? Your changes may not be saved."';
+        } else if (userAgent.includes('Edg')) {
+            browserName = 'Microsoft Edge';
+            browserPrompt = '提示文本："要离开吗？系统可能不会保存您所做的更改。"';
+        }
+
+        compatibleElement.textContent = browserName;
+        promptElement.textContent = browserPrompt;
+
+        // 检查 beforeunload 支持
+        const isBeforeUnloadSupported = 'onbeforeunload' in window;
+        if (!isBeforeUnloadSupported) {
+            compatibleElement.textContent = '不支持';
+            compatibleElement.className = 'status-value upgrading';
+            showToast('当前浏览器可能不支持 beforeunload 事件');
+        }
+    }
+
+    // ====================
+    // 工具函数
+    // ====================
+    function showToast(message) {
+        // 创建一个临时的提示
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                z-index: 10001;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: fadeInOut 3s ease;
+            `;
+
+        document.body.appendChild(toast);
+
+        // 3秒后移除
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    // 添加 CSS 动画
+    const style = document.createElement('style');
+    style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            }
+        `;
+    document.head.appendChild(style);
+
+    // ====================
+    // 全局导出（用于按钮的 onclick）
+    // ====================
+    window.startUpgrade = startUpgradeProcess;
+    window.completeUpgrade = completeUpgrade;
+    window.cancelUpgrade = cancelUpgrade;
+    window.resetDemo = resetDemo;
+    window.pauseUpgrade = pauseUpgrade;
+    window.showForceCloseConfirm = showForceCloseConfirm;
+    window.hideForceCloseModal = hideForceCloseModal;
+    window.forceCompleteUpgrade = forceCompleteUpgrade;
+    window.simulateCloseTab = simulateCloseTab;
+    window.simulateRefresh = simulateRefresh;
+    window.simulateNavigation = simulateNavigation;
+    window.simulateBackButton = simulateBackButton;
+    window.showPreUpgradeModal = showPreUpgradeModal;
+    window.hidePreUpgradeModal = hidePreUpgradeModal;
+    window.confirmUpgrade = confirmUpgrade;
+</script>
+</body>
+</html>
